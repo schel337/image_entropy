@@ -3,12 +3,15 @@ Project to calculate the entropy of an image, in the information theoritical sen
 This in some sense measures the average information conveyed by an event or the extent to which information can be compressed. 
 The main reason why I found computing the entropy of images to be interesting is because estimating the probability p does not have a clear best value. 
 The method I found commonly used by some larger libraries like matlab used the histogram of image pixels, but this has very clear failures when the image has spatial structure (see Examples). 
+To see if my entropy calculations were decent features, even if they're not good statistics, I tested it as a feature for neural networks in Tensorflow classifying CIFAR-10 data. Without the feature, the network reached 55% accuracy and with the entropy feature it found 59% accuracy. Both were much worse than the convolutional neural network I tested with 67% accuracy, but the CNN also took 10 times as long to train.
 I also trained an all against all SVM on a subset of [MNIST data](http://cis.jhu.edu/~sachin/digit/digit.html) and found error rates for the voting of SVMs decreased by 10% when using unweighted local entropy calculations. 
 This came at the cost of much more computing time as the dimension of the vectors was doubled. With more difficult classification tasks, entropy data might have more effect, as voting accuracy was above 90% and the majority prediction was 100% accurate with or without entropy.
 ## Files
-- Entropy.cpp: Computes the entropy of images by pixel. Requires OpenCV library to be linked. Can then be run with ./Entropy [input file] [one char flag]
+- EntropyMain.cpp: Can then be run with ./Entropy [input file] [entropy options] [output file]
+- Entropy.cpp: Computes the entropy of images by pixel. Requires OpenCV library to be linked. 
 - Entropy.h: header file for entropy
-- SVM.cpp: files
+- SVM.cpp: this is where the SVMs were made
+- NeuralNetClassifiers.ipynb: Jupyter notebook where neural net classifiers were trained on CIFAR data
 ## How to use
 - Install [OpenCV library](https://docs.opencv.org/4.4.0/d9/df8/tutorial_root.html) and compile
 - Then can be run from the command line with ./Entropy [input file] [entropy options] [output file]

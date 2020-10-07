@@ -64,22 +64,20 @@ void localEntropy(Mat input, Mat output, int radius) {
 		}
 	} 
     double prob, entropy;
-    int area, mid_area = diam*diam, side_area=(radius+1)*(diam), corner_area = (radius+1)*(radius+1);
-	int on_edge = 0;
+    int area;
     uchar *outRow;
     for (X=0; X<input.rows; X++) {
+		bottom = X>radius ? -radius : -X;
+		top = X+radius<nRows ? radius : nRows-X-1;
     	outRow = output.ptr(X);
     	histosRow = histosMat.ptr(X);
-    	for (Y=0; Y<input.rows; Y++) {
+    	for (Y=0; Y<input.cols; Y++) {
     		if (histosRow[Y] == 0) {
     			outRow[Y] = 0;
     		} else {
-				on_edge = 0;
-				if (X == 0 || X==(nRows-1)) {on_edge++;}
-				if ( Y==0 || Y==(nCols-1)) {on_edge++;}
-				if (on_edge==2) {area = corner_area;} 
-				else if (on_edge==1) {area = side_area;} 
-				else {area = mid_area;}
+				left = Y>radius ? -radius : -Y;
+				right = Y+radius<nCols ? radius : nCols-Y-1;
+				area = (right - left + 1) * (top - bottom + 1);
     			prob = (double) histosRow[Y] / area;
     			entropy = -log2(prob) * prob;
     			outRow[Y] = (uchar) (255.0 * entropy);
@@ -89,24 +87,12 @@ void localEntropy(Mat input, Mat output, int radius) {
 }
 
 void localWeightedEntropy(Mat input, Mat output, int radius, double *weights) {
-	double denom, mid_denom=0, side_denom=0, corner_denom=0;
+	double denom;
 	const int diam = 2*radius+1;
 	int nRows = input.rows, nCols = input.cols;
 	int X, Y, dX, dY;
-	for (X=0; X<diam; X++) {
-		for (Y=0; Y<diam; Y++) {
-			if (X <= radius) {
-				side_denom += weights[X*diam+Y];
-				if (Y <= radius) {
-					corner_denom += weights[X*diam+Y];
-				}
-			}
-			mid_denom += weights[X*diam+Y];
-		}
-    }
     Mat histosMat(nRows, nCols, CV_8U, Scalar(0));
 	double accum, prob, entropy;
-	int on_edge = 0;;
     uchar *histosRow;
     int left, right, top, bottom;
 	uchar *rows[2*radius+1];
@@ -119,6 +105,7 @@ void localWeightedEntropy(Mat input, Mat output, int radius, double *weights) {
 		}
 		for (Y=0; Y<nCols; Y++) {
 			accum = 0;
+			denom = 0;
 			left = Y>radius ? -radius : -Y;
 			right = Y+radius<nCols ? radius : nCols-Y-1;
 			for (dX=bottom; dX<=top; dX++) {
@@ -126,17 +113,12 @@ void localWeightedEntropy(Mat input, Mat output, int radius, double *weights) {
 					if (rows[radius+dX][Y+dY] == rows[radius][Y]) {
 						accum += weights[(radius+dX)*diam+radius+dY];
 					}
+					denom += weights[(radius+dX)*diam+radius+dY];
 				}
 			}
 			if (accum == 0) {
     			histosRow[Y] = 0;
     		} else {
-				on_edge = 0;
-				if (X == 0 || X==(nRows-1)) {on_edge++;}
-				if ( Y==0 || Y==(nCols-1)) {on_edge++;}
-				if (on_edge==2) { denom = corner_denom;} 
-				else if (on_edge==1) { denom = side_denom;} 
-				else {denom = mid_denom;}
     			prob = accum / denom;
     			entropy = -log2(prob) * prob;
     			histosRow[Y] = (uchar) (255.0 * entropy);
@@ -222,67 +204,4 @@ void normalEntropy(Mat input, Mat output) {
     	lookUpRow[X] = (uchar) 255*exp(diff*diff*varSquareInv);
     }
 	LUT(input, lookUpMat, output);
-}
-
-
-int main(int argc, char** argv )
-{
-	if ( argc < 3 )
-    {
-        printf("Please input an image file name and an entropy type with parameter\n");
-		printf("Optionallly enter a file name to output to\n");
-        return -1;
-    }
-	char *outFile = NULL;
-	if (argc == 4) {
-		outFile = argv[3];
-	}
-    Mat img;
-    img = imread(argv[1], IMREAD_GRAYSCALE );
-    if ( !img.data )
-    {
-        printf("No image data \n");
-        return -1;
-    }
-    Mat output;
-	int paramLen = strlen(argv[2])-1;
-	int radius;
-	if (paramLen > 0) {
-		switch (argv[2][0]) {
-			case 'L':
-				radius = strtol(argv[2]+1, NULL, 10);
-				localEntropy(img, img, radius);
-				break;
-			case 'G':
-				radius = strtol(argv[2]+1, NULL, 10);
-				localGaussianEntropy(img, img, radius);
-				break;
-			case 'D':
-				radius = strtol(argv[2]+1, NULL, 10);
-				localDistanceEntropy(img, img, radius);
-				break;
-			default:
-				printf("Please enter a radius or a different entropy\n");
-				return -1;
-		}
-	} else {
-		switch (argv[2][0]) {
-			case 'H':
-				globalEntropy(img, img);
-				break;
-			case 'N':
-				normalEntropy(img, img);
-				break;
-			default:
-				printf("Please enter a different entropy\n");
-				return -1;
-		}
-	}
-    namedWindow("Entropy", WINDOW_AUTOSIZE );
-    imshow("Entropy", img);
-    waitKey(0);
-	if (outFile) {
-		imwrite(outFile, img);
-	}
-    return 0;
 }
