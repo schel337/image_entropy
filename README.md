@@ -12,6 +12,7 @@ This came at the cost of much more computing time as the dimension of the vector
 - Entropy.h: header file for entropy
 - SVM.cpp: this is where the SVMs were made
 - NeuralNetClassifiers.ipynb: Jupyter notebook where neural net classifiers were trained on CIFAR data
+- Utils.py: Python code for computing features and loading data for the neural networks. Reimimplemented distance weighted entropy in a much slicker way with NumPy.
 ## How to use
 - Install [OpenCV library](https://docs.opencv.org/4.4.0/d9/df8/tutorial_root.html) and compile
 - Then can be run from the command line with ./Entropy [input file] [entropy options] [output file]
